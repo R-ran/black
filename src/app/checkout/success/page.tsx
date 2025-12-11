@@ -5,11 +5,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 
+interface SessionDetails {
+  payment_status?: string;
+  amount_total?: number;
+  currency?: string;
+}
+
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("paymentId");
   const sessionId = searchParams.get("session_id");
-  const [sessionDetails, setSessionDetails] = useState<any>(null);
+  const [sessionDetails, setSessionDetails] = useState<SessionDetails | null>(null);
   const { clearCart } = useCart();
 
   useEffect(() => {

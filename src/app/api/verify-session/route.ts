@@ -41,10 +41,11 @@ export async function GET(request: NextRequest) {
       amount_total: session.amount_total,
       currency: session.currency,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error verifying session:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to verify session";
     return NextResponse.json(
-      { error: error.message || "Failed to verify session" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { CartItem } from "@/contexts/CartContext";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 构建line items
     // 注意：item.price已经是该商品的总价（考虑了数量折扣），所以quantity应该设为1
-    const lineItems = items.map((item: any) => ({
+    const lineItems = items.map((item: CartItem) => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -61,10 +62,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating checkout session:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to create checkout session";
     return NextResponse.json(
-      { error: error.message || "Failed to create checkout session" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

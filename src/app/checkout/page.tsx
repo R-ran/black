@@ -6,13 +6,13 @@ import { useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
-
-declare global {
-  interface Window {
-    paypal?: any;
-    ApplePaySession?: any;
-  }
-}
+import type {
+  PayPalOrderData,
+  PayPalOrderActions,
+  PayPalOrderDetails,
+  ApplePayValidateMerchantEvent,
+  ApplePayPaymentAuthorizedEvent,
+} from "@/types/payment";
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
@@ -43,7 +43,7 @@ export default function CheckoutPage() {
             label: "paypal",
           },
           fundingSource: "paypal",
-          createOrder: function (data: any, actions: any) {
+          createOrder: function (data: PayPalOrderData, actions: PayPalOrderActions) {
             return actions.order.create({
               purchase_units: [
                 {
@@ -56,8 +56,8 @@ export default function CheckoutPage() {
               ],
             });
           },
-          onApprove: function (data: any, actions: any) {
-            return actions.order.capture().then(function (details: any) {
+          onApprove: function (data: PayPalOrderData, actions: PayPalOrderActions) {
+            return actions.order.capture().then(function (details: PayPalOrderDetails) {
               setProcessing(true);
               // 支付成功后的处理
               console.log("Payment successful:", details);
@@ -67,7 +67,7 @@ export default function CheckoutPage() {
               window.location.href = `/checkout/success?paymentId=${details.id}`;
             });
           },
-          onError: function (err: any) {
+          onError: function (err: Error) {
             console.error("PayPal error:", err);
             alert("An error occurred during payment, please try again.");
           },
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
 
     const session = new window.ApplePaySession(3, request);
 
-    session.onvalidatemerchant = async (event: any) => {
+    session.onvalidatemerchant = async (event: ApplePayValidateMerchantEvent) => {
       try {
         // 在实际应用中，这里应该调用后端API来验证商户
         // 现在使用模拟的merchantSession
@@ -130,7 +130,7 @@ export default function CheckoutPage() {
       }
     };
 
-    session.onpaymentauthorized = async (event: any) => {
+    session.onpaymentauthorized = async (event: ApplePayPaymentAuthorizedEvent) => {
       try {
         setProcessing(true);
         // 在实际应用中，这里应该调用后端API来处理支付
@@ -145,10 +145,14 @@ export default function CheckoutPage() {
         // 跳转到成功页面
         window.location.href = `/checkout/success?paymentId=applepay_${Date.now()}`;
         
-        session.completePayment(window.ApplePaySession.STATUS_SUCCESS);
+        if (window.ApplePaySession) {
+          session.completePayment(window.ApplePaySession.STATUS_SUCCESS);
+        }
       } catch (error) {
         console.error("Payment processing error:", error);
-        session.completePayment(window.ApplePaySession.STATUS_FAILURE);
+        if (window.ApplePaySession) {
+          session.completePayment(window.ApplePaySession.STATUS_FAILURE);
+        }
         alert("Payment processing failed. Please try again.");
         setProcessing(false);
       }
@@ -190,9 +194,10 @@ export default function CheckoutPage() {
       } else {
         throw new Error('No checkout URL received');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Stripe checkout error:', error);
-      alert(error.message || 'Failed to initiate payment. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.';
+      alert(errorMessage);
       setProcessing(false);
       setStripeLoading(false);
     }

@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
 
         await transporter.sendMail(mailOptions);
         console.log("Email notification sent successfully to QQ email:", QQ_EMAIL);
-      } catch (emailError: any) {
+      } catch (emailError) {
         console.error("Failed to send email notification:", emailError);
         // 即使邮件发送失败，也返回成功，因为订阅已记录
         // 但记录错误以便调试
-        if (emailError.message) {
+        if (emailError instanceof Error && emailError.message) {
           console.error("Error details:", emailError.message);
         }
       }
