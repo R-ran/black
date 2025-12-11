@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useSearchParams } from "next/navigation";
 import Script from "next/script";
@@ -14,7 +14,7 @@ import type {
   ApplePayPaymentAuthorizedEvent,
 } from "@/types/payment";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const paymentMethod = searchParams.get("method") || "paypal";
   const { items, getTotalPrice, getTotalItems, clearCart } = useCart();
@@ -417,6 +417,18 @@ export default function CheckoutPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p>Loading...</p>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
 
